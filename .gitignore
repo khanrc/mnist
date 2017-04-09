@@ -1,0 +1,4 @@
+MNIST_data/
+out*/
+.DS_Store
+.ipynb_checkpoints/
