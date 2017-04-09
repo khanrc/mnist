@@ -5,10 +5,12 @@ The aim of this project is to learn mnist classifier with very high accuracy
 
 ## TODO
 
-* tensorboard
+* tensorboard (graph, summaries ...)
+* add command-line parameters to run (epochs ...)
 * data manager module
 * data augmentation
-    * heuristic
+    * affine transition (rotate, shift, scale ...)
+    * elastic distortion
     * GAN
 * ensemble
 * reproducibility
