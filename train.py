@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
-from models import Model
+import models
 from solver import Solver
 
 mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
@@ -11,7 +11,7 @@ tf.reset_default_graph()
 
 sess = tf.Session()
 
-basic_cnn = Model('basic_cnn', lr=0.001, SEED=SEED)
+basic_cnn = models.VGG(lr=0.001, SEED=SEED)
 solver = Solver(sess, basic_cnn)
 
 tf.set_random_seed(SEED)
@@ -19,8 +19,8 @@ np.random.seed(SEED)
 
 sess.run(tf.global_variables_initializer())
 
-batch_size = 50
-epoch_n = 30
+batch_size = 64
+epoch_n = 120
 N = mnist.train.num_examples
 
 max_train_acc = 0
@@ -66,7 +66,7 @@ import matplotlib.gridspec as gridspec
 def plot(images, labels, predicted):
     l = len(images)
     height = (l+9) // 10
-    fig = plt.figure(figsize=(10,7))
+    fig = plt.figure(figsize=(10,height+1))
     gs = gridspec.GridSpec(height,10)
     gs.update(wspace=0.05, hspace=0.05)
     corrects = np.argmax(labels, axis=1) # one-hot => single
