@@ -2,7 +2,7 @@ import tensorflow as tf
 
 # TODO:
 # preproc should be moved to the data management module
-def preproc(self, x):
+def preproc(x):
     # x = x*2 - 1.0
     # per-example mean subtraction (http://ufldl.stanford.edu/wiki/index.php/Data_Preprocessing)
     mean = tf.reduce_mean(x, axis=1, keep_dims=True)

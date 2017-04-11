@@ -20,7 +20,7 @@ np.random.seed(SEED)
 sess.run(tf.global_variables_initializer())
 
 batch_size = 64
-epoch_n = 120
+epoch_n = 200
 N = mnist.train.num_examples
 
 max_train_acc = 0
