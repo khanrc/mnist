@@ -21,6 +21,8 @@ The aim of this project is to learn mnist classifier with very high accuracy
         * InfiMNIST
         * https://github.com/CalculatedContent/big_deep_simple_mlp
     * elastic distortion
+        * mnist-helper
+            * https://github.com/vsvinayak/mnist-helper
     * GAN
 * add ensemble
 * fix reproducibility

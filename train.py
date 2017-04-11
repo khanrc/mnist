@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
-import models
+import vggnet
 from solver import Solver
 
 mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
@@ -11,7 +11,7 @@ tf.reset_default_graph()
 
 sess = tf.Session()
 
-basic_cnn = models.VGG(lr=0.001, SEED=SEED)
+basic_cnn = vggnet.VGGNet(lr=0.001, SEED=SEED)
 solver = Solver(sess, basic_cnn)
 
 tf.set_random_seed(SEED)

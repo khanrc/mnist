@@ -1,6 +1,7 @@
 *.pyc
 *.png
 *.log
+mnist-helper/
 MNIST_data/
 out*/
 .DS_Store
