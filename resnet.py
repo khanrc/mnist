@@ -62,7 +62,9 @@ class ResNet:
                     net = tf.nn.relu(net)
                     net = tf.layers.dropout(net, rate=0.3, training=self.training, seed=self.SEED)
                 
-# strided pooling
+# strided pooling: all convnet, DCGAN ...
+# [5,5] => [3,3] ?
+# STRIVING FOR SIMPLICITY, THE ALL CONVOLUTIONAL NET: http://arxiv.org/pdf/1412.6806v3.pdf
                 net = tf.layers.conv2d(net, n_filters, [5,5], strides=2, padding='SAME', use_bias=False,
                                       kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(seed=self.SEED))
 #                 net = tf.layers.max_pooling2d(net, pool_size=[2,2], strides=2)
