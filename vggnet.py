@@ -32,38 +32,17 @@ class VGGNet:
             net = x_img
             n_filters = 64
             for i in range(3):
-                # net = tf.layers.conv2d(net, n_filters, [3,3], strides=1, padding='SAME', use_bias=False,
-                #                       kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(seed=SEED))
-                # net = tf.layers.batch_normalization(net, training=self.training)
-                # net = tf.nn.relu(net)
-                # net = tf.layers.dropout(net, rate=0.3, training=self.training, seed=SEED)
                 net = conv2d_bn_activ_dropout(name="3x3conv{}-{}".format(i+1, 1), x=net, n_filters=n_filters, kernel_size=[3,3], strides=1, 
                 	dropout_rate=0.3, training=self.training, seed=SEED)
 
-                # net = tf.layers.conv2d(net, n_filters, [3,3], strides=1, padding='SAME', use_bias=False,
-                #                       kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(seed=SEED))
-                # net = tf.layers.batch_normalization(net, training=self.training)
-                # net = tf.nn.relu(net)
-                # net = tf.layers.dropout(net, rate=0.3, training=self.training, seed=SEED)
                 net = conv2d_bn_activ_dropout(name="3x3conv{}-{}".format(i+1, 2), x=net, n_filters=n_filters, kernel_size=[3,3], strides=1, 
                 	dropout_rate=0.3, training=self.training, seed=SEED)
  
                 if i == 2: # for last layer - add 1x1 convolution
-                    # net = tf.layers.conv2d(net, n_filters, [1,1], strides=1, padding='SAME', use_bias=False,
-                    #                       kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(seed=SEED))
-                    # net = tf.layers.batch_normalization(net, training=self.training)
-                    # net = tf.nn.relu(net)
-                    # net = tf.layers.dropout(net, rate=0.3, training=self.training, seed=SEED)
                     net = conv2d_bn_activ_dropout(name="1x1conv", x=net, n_filters=n_filters, kernel_size=[1,1], strides=1, 
                 		dropout_rate=0.3, training=self.training, seed=SEED)
                 
 # strided pooling
-#                 net = tf.layers.conv2d(net, n_filters, [5,5], strides=2, padding='SAME', use_bias=False,
-#                                       kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(seed=SEED))
-# #                 net = tf.layers.max_pooling2d(net, pool_size=[2,2], strides=2)
-#                 net = tf.layers.batch_normalization(net, training=self.training)
-#                 net = tf.nn.relu(net)
-#                 net = tf.layers.dropout(net, rate=0.3, training=self.training, seed=SEED)
                 net = conv2d_bn_activ_dropout(name="5x5stridepool{}".format(i+1), x=net, n_filters=n_filters, kernel_size=[5,5], strides=2, 
                 	dropout_rate=0.3, training=self.training, seed=SEED)
 
@@ -88,6 +67,7 @@ class VGGNet:
                 self.train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(self.loss)    
             
             self.pred = tf.argmax(logits, axis=1)
+            self.prob = tf.nn.softmax(logits)
             self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.pred, tf.argmax(self.y, axis=1)), tf.float32))
 
             # summary

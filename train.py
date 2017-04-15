@@ -37,16 +37,15 @@ learning_rate = 0.001
 N = mnist.train.num_examples
 
 SUMMARY_DIR = "./tmp/run{}".format(FLAGS.num_runs)
-CHECKPOINT_DIR = "./checkpoint"
+CHECKPOINT_DIR = "./checkpoint/run{}".format(FLAGS.num_runs)
 if not os.path.exists(SUMMARY_DIR):
     os.makedirs(SUMMARY_DIR)
 if not os.path.exists(CHECKPOINT_DIR):
     os.makedirs(CHECKPOINT_DIR)
 
-if FLAGS.num_runs == 0:
-    # default run 0: reset every time
-    for f in glob.glob(SUMMARY_DIR+"/*"):
-        shutil.rmtree(f)
+# reset for coressponding RUN #
+for f in glob.glob(SUMMARY_DIR+"/*"):
+    shutil.rmtree(f)
 
 
 sess = tf.Session()
@@ -122,36 +121,8 @@ elapsed_time = time.time() - start_time
 formatted = datetime.timedelta(seconds=int(elapsed_time))
 print("=== training time elapsed: {}s ===".format(formatted))
 
-# wrong answers check
-wrongs, predicted = solver.wrong_indices(mnist.test.images, mnist.test.labels, 1000)
 
-import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+# validation
 
-def plot(images, labels, predicted):
-    l = len(images)
-    height = (l+9) // 10
-    fig = plt.figure(figsize=(10,height+1))
-    gs = gridspec.GridSpec(height,10)
-    gs.update(wspace=0.05, hspace=0.05)
-    corrects = np.argmax(labels, axis=1) # one-hot => single
-
-    for i, image in enumerate(images):
-        ax = plt.subplot(gs[i])
-        plt.axis('off')
-        ax.set_title("{} ({})".format(corrects[i], predicted[i]))
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        ax.set_aspect('equal')
-        plt.imshow(image.reshape(28, 28), cmap='Greys')
-
-    return fig
-
-# plt.imshow(mnist.test.images[0].reshape(28, 28), cmap='Greys')
-# plt.show()
-
-fig = plot(mnist.test.images[wrongs], mnist.test.labels[wrongs], predicted[wrongs])
-fig.savefig('wrong_answers.png')
-
+# import validation
+# validation.wrong_answer_check(solver, mnist.test.images, mnist.test.labels, filename="wrong_answers.png")

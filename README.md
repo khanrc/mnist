@@ -5,13 +5,9 @@ The aim of this project is to learn mnist classifier with very high accuracy
 
 ## TODO
 
-* add tensorboard (graph, summaries ...)
-* add command-line parameters to run (epochs ...)
-* add data manager module
-* add validation module (wrong results check ...)
-* fix data preprocessing
-    * use train data statistics
-* add data augmentation
+* [1] fix reproducibility
+* [2] add data manager module
+* [2] add data augmentation
     * affine transition (rotate, shift, scale ...)
         * keras image generator chk
     * augmented set
@@ -24,9 +20,20 @@ The aim of this project is to learn mnist classifier with very high accuracy
         * mnist-helper
             * https://github.com/vsvinayak/mnist-helper
     * GAN
-* add ensemble
-* fix reproducibility
+* add argparser with GPU command line control module
 * implement other models
+    * resnet
+    * inception
     * maxout
     * nin
     * etc...
+
+## DONE
+* [done] add tensorboard (graph, summaries ...)
+    * data smoothing in tensorboard can be changed to assign value directly
+* [done] add command-line parameters to run (epochs ...)
+    * maybe move to argparse
+* [no] fix data preprocessing
+    * I was confused. but we can test other preprocessing methods - width normalization, ...
+* [done] add validation module (wrong results check ...)
+* [done] add ensemble
