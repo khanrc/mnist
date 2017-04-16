@@ -5,6 +5,7 @@ The aim of this project is to learn mnist classifier with very high accuracy
 
 ## TODO
 
+* make last epoch save point: 150
 * [1] fix reproducibility
 * [2] add data manager module
 * [2] add data augmentation
