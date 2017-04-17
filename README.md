@@ -5,26 +5,23 @@ The aim of this project is to learn mnist classifier with very high accuracy
 
 ## TODO
 
-* make last epoch save point: 150
-* [1] fix reproducibility
-* [2] add data manager module
-* [2] add data augmentation
-    * affine transition (rotate, shift, scale ...)
-        * keras image generator chk
+* fix reproducibility
+* [1] add data manager module
+    * TFRecord check
+* [1] add data augmentation
+    * [done] affine transition (rotate, shift, scale ...)
     * augmented set
         * AlignMNIST
             * maybe better
             * http://www2.compute.dtu.dk/~sohau/augmentations/
         * InfiMNIST
         * https://github.com/CalculatedContent/big_deep_simple_mlp
-    * elastic distortion
-        * mnist-helper
-            * https://github.com/vsvinayak/mnist-helper
-    * GAN
+    * [done] elastic distortion
+    * [no] GAN
 * add argparser with GPU command line control module
-* implement other models
-    * resnet
-    * inception
+* [2] implement other models
+    * [2] resnet
+    * [3] inception
     * maxout
     * nin
     * etc...
@@ -36,5 +33,9 @@ The aim of this project is to learn mnist classifier with very high accuracy
     * maybe move to argparse
 * [no] fix data preprocessing
     * I was confused. but we can test other preprocessing methods - width normalization, ...
+    * chk
 * [done] add validation module (wrong results check ...)
 * [done] add ensemble
+* [done] refact vggnet2 with vggnet
+    * chk
+* [done] make last epoch save point: 150

@@ -19,7 +19,7 @@ import os, glob, shutil
 # TODO:
 # move to argparse... https://github.com/carpedm20/BEGAN-tensorflow/blob/master/config.py
 # add GPU control 
-tf.flags.DEFINE_integer("num_epochs", 100, "Number of training epochs (default: 100)")
+tf.flags.DEFINE_integer("num_epochs", 150, "Number of training epochs (default: 150)")
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
 # tf.flags.DEFINE_integer("num_runs", 0, "# of runs for tensorboard summaries (default: 0)")
 tf.flags.DEFINE_string("save_dir", "tmp", "checkpoint subdirectory (default: tmp)")
@@ -48,9 +48,9 @@ N = mnist.train.num_examples
 
 # right position..?
 if FLAGS.model_name == "vggnet":
-	model = vggnet.VGGNet(lr=learning_rate, SEED=SEED)
+	model = vggnet.VGGNet(name="vggnet", lr=learning_rate, SEED=SEED)
 elif FLAGS.model_name == "vggnet2":
-	model = vggnet.VGGNet2(lr=learning_rate, SEED=SEED)
+	model = vggnet.VGGNet(name="vggnet2", lr=learning_rate, SEED=SEED)
 else:
 	print("Wrong model name!")
 	exit()

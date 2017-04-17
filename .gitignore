@@ -1,6 +1,8 @@
 *.pyc
 *.png
 *.log
+*.out
+*/
 mnist-helper/
 MNIST_data/
 out*/

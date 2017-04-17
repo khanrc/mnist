@@ -16,11 +16,8 @@ mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
 N = mnist.train.num_examples
 
 sess = tf.Session()
-model = vggnet.VGGNet(SEED=SEED)
-solver = Solver(sess, model)
-
 CHECKPOINT_DIR = "./checkpoint"
-model_paths = ["run300", "run748"]
+model_paths = ["VGG2-400", "VGG-300", "VGG-748"]
 
 def one_hot_vectorize(indices, depth=10):
     idx = np.array(indices)
@@ -29,7 +26,6 @@ def one_hot_vectorize(indices, depth=10):
     return ret
 
 sess.run(tf.global_variables_initializer())
-saver = tf.train.Saver()
 
 y_sum = np.zeros_like(mnist.test.labels)
 
@@ -43,6 +39,17 @@ for subp in model_paths:
     path = os.path.join(CHECKPOINT_DIR, subp)
     checkpoint = tf.train.get_checkpoint_state(path)
     if checkpoint:
+        if subp.startswith("VGG-"):
+            model = vggnet.VGGNet(name="vggnet")
+        elif subp.startswith("VGG2-"):
+            model = vggnet.VGGNet(name="vggnet2")
+        else:
+            print("what model?")
+            break
+        #model = vggnet.VGGNet(SEED=SEED)
+        solver = Solver(sess, model)
+        saver = tf.train.Saver()
+
         for v in checkpoint.all_model_checkpoint_paths:
             if v.endswith("test"):
                 continue
