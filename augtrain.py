@@ -25,7 +25,7 @@ tf.flags.DEFINE_integer("num_epochs", 150, "Number of training epochs (default: 
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
 # tf.flags.DEFINE_integer("num_runs", 0, "# of runs for tensorboard summaries (default: 0)")
 tf.flags.DEFINE_string("save_dir", "tmp", "checkpoint subdirectory (default: tmp)")
-# tf.flags.DEFINE_integer("gpu_num", 0, "CUDA visible device (default: 0)")
+tf.flags.DEFINE_integer("gpu_num", 0, "CUDA visible device (default: 0)")
 tf.flags.DEFINE_string("model_name", "vggnet", "vggnet / vggnet2 (default: vggnet)")
 tf.flags.DEFINE_integer("elastic_distortion", 0, "Use elastic distortion (default: 0)")
 FLAGS = tf.flags.FLAGS

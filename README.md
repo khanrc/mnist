@@ -5,6 +5,7 @@ The aim of this project is to learn mnist classifier with very high accuracy
 
 ## TODO
 
+* [0] fix argparse - CUDA_VISIBLE_DEVICES
 * fix reproducibility
 * [1] add data manager module
     * TFRecord check
