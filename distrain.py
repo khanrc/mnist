@@ -99,6 +99,7 @@ def train():
     print("start train ...")
     for epoch in range(epoch_n):
         # shuffle
+        np.random.shuffle(train_dist)
         for i in range(0, N, batch_size):
             x_batch = train_dist[i:i+batch_size, :784]
             y_batch = train_dist[i:i+batch_size, 784:]
