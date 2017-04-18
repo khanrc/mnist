@@ -8,17 +8,18 @@ The aim of this project is to learn mnist classifier with very high accuracy
 * fix reproducibility
 * [1] add data manager module
     * TFRecord check
+    * integrate fragmented train.py ... T.T
 * [1] add data augmentation
-    * [done] affine transition (rotate, shift, scale ...)
+    * elastic distortion (do do do)
+        * simultaneou distortion is very expensive
+        * affine transform is cheap
+        * therefore, pre-distort only
     * augmented set
         * AlignMNIST
             * maybe better
             * http://www2.compute.dtu.dk/~sohau/augmentations/
         * InfiMNIST
         * https://github.com/CalculatedContent/big_deep_simple_mlp
-    * [done] elastic distortion
-    * [no] GAN
-* add argparser with GPU command line control module
 * [2] implement other models
     * [2] resnet
     * [3] inception
@@ -39,3 +40,8 @@ The aim of this project is to learn mnist classifier with very high accuracy
 * [done] refact vggnet2 with vggnet
     * chk
 * [done] make last epoch save point: 150
+* [1] add data augmentation
+    * [done] affine transition (rotate, shift, scale ...)
+    * [done] elastic distortion
+    * [no] GAN
+* [done] add argparser with GPU command line control module

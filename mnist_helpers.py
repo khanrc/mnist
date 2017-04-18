@@ -1,7 +1,7 @@
 import cv2
 import numpy
 import math
-
+import numpy as np
 from numpy.random import random_integers
 from scipy.signal import convolve2d
 

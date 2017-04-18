@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-# os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
@@ -25,7 +25,7 @@ tf.flags.DEFINE_integer("num_epochs", 150, "Number of training epochs (default: 
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
 # tf.flags.DEFINE_integer("num_runs", 0, "# of runs for tensorboard summaries (default: 0)")
 tf.flags.DEFINE_string("save_dir", "tmp", "checkpoint subdirectory (default: tmp)")
-tf.flags.DEFINE_integer("gpu_num", 0, "CUDA visible device (default: 0)")
+# tf.flags.DEFINE_integer("gpu_num", 0, "CUDA visible device (default: 0)")
 tf.flags.DEFINE_string("model_name", "vggnet", "vggnet / vggnet2 (default: vggnet)")
 tf.flags.DEFINE_integer("elastic_distortion", 0, "Use elastic distortion (default: 0)")
 FLAGS = tf.flags.FLAGS
@@ -36,7 +36,7 @@ for attr, value in sorted(FLAGS.__flags.items()):
 print("")
 if FLAGS.save_dir == "tmp":
     print("========== save_dir is tmp!!! ==========")
-os.environ["CUDA_VISIBLE_DEVICES"]=str(FLAGS.gpu_num)
+# os.environ["CUDA_VISIBLE_DEVICES"]=str(FLAGS.gpu_num) # TODO: do not works .. check!
 
 # tf.reset_default_graph()
 SEED = 777
@@ -110,7 +110,7 @@ def train():
 
     # train
     sess.run(tf.global_variables_initializer())
-    datagen = ImageDataGenerator(rotation_range=20, width_shift_range=0.1, height_shift_range=0.1, zoom_range=0.1)
+    datagen = ImageDataGenerator(rotation_range=15, width_shift_range=0.1, height_shift_range=0.1, zoom_range=0.1)
 
     train_x = np.reshape(mnist.train.images, [-1, 28, 28, 1])
     train_y = mnist.train.labels
