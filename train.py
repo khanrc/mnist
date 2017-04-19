@@ -1,6 +1,31 @@
 import os
+from argparse import ArgumentParser
+
 # os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 # os.environ["CUDA_VISIBLE_DEVICES"]="0"
+def build_parser():
+    parser = ArgumentParser()
+    parser.add_argument('--num_epochs', default=150, help="Number of training epochs (default: 150)", type=int)
+    parser.add_argument('--batch_size', default=128, help="Batch Size (default: 128)", type=int)
+    parser.add_argument('--save_dir', default='tmp', help="checkpoint subdirectory name (default: tmp)")
+    parser.add_argument('--gpu_num', default=0, help="CUDA visible device (default: 0)", required=True)
+    parser.add_argument("--model_name", default="vggnet", help="vggnet / vggnet2 (default: vggnet)")
+    parser.add_argument("--augmentation_type", default="none", help="none / affine / align / distortion (default: none)", required=True)
+
+    return parser
+
+parser = build_parser()
+FLAGS = parser.parse_args()
+print("\nParameters:")
+for attr, value in sorted(vars(FLAGS).items()):
+    print("{}={}".format(attr.upper(), value))
+print("")
+if FLAGS.save_dir == "tmp":
+    print("========== save_dir is tmp!!! ==========")
+
+os.environ["CUDA_VISIBLE_DEVICES"]=str(FLAGS.gpu_num)
+
+
 import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
@@ -8,32 +33,19 @@ import vggnet
 from solver import Solver
 import time, datetime
 import os, glob, shutil
+import datagenerator
 
-# from argparse import ArgumentParser
 
-# def build_parser():
-# 	parser = ArgumentParser()
-# 	parser.add_argument('--num-epochs', dest="num_epochs", help="Number of training epochs (default: 100)")
+def get_model(model_name):
+    # right position..?
+    if model_name == "vggnet":
+        model = vggnet.VGGNet(name="vggnet", lr=learning_rate, SEED=SEED)
+    elif model_name == "vggnet2":
+        model = vggnet.VGGNet(name="vggnet2", lr=learning_rate, SEED=SEED)
+    else:
+        assert False, "wrong model name"
 
-# Params
-# TODO:
-# move to argparse... https://github.com/carpedm20/BEGAN-tensorflow/blob/master/config.py
-# add GPU control 
-tf.flags.DEFINE_integer("num_epochs", 150, "Number of training epochs (default: 150)")
-tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-# tf.flags.DEFINE_integer("num_runs", 0, "# of runs for tensorboard summaries (default: 0)")
-tf.flags.DEFINE_string("save_dir", "tmp", "checkpoint subdirectory (default: tmp)")
-tf.flags.DEFINE_integer("gpu_num", 0, "CUDA visible device (default: 0)")
-tf.flags.DEFINE_string("model_name", "vggnet", "vggnet / vggnet2 (default: vggnet)")
-FLAGS = tf.flags.FLAGS
-FLAGS._parse_flags()
-print("\nParameters:")
-for attr, value in sorted(FLAGS.__flags.items()):
-    print("{}={}".format(attr.upper(), value))
-print("")
-if FLAGS.save_dir == "tmp":
-	print("========== save_dir is tmp!!! ==========")
-os.environ["CUDA_VISIBLE_DEVICES"]=str(FLAGS.gpu_num)
+    return model
 
 # tf.reset_default_graph()
 SEED = 777
@@ -46,14 +58,7 @@ epoch_n = FLAGS.num_epochs
 learning_rate = 0.001
 N = mnist.train.num_examples
 
-# right position..?
-if FLAGS.model_name == "vggnet":
-	model = vggnet.VGGNet(name="vggnet", lr=learning_rate, SEED=SEED)
-elif FLAGS.model_name == "vggnet2":
-	model = vggnet.VGGNet(name="vggnet2", lr=learning_rate, SEED=SEED)
-else:
-	print("Wrong model name!")
-	exit()
+model = get_model(model_name=FLAGS.model_name)
 
 SUMMARY_DIR = "./tmp/gpu{}".format(FLAGS.gpu_num)
 CHECKPOINT_DIR = "./checkpoint/{}".format(FLAGS.save_dir)
@@ -62,86 +67,79 @@ if not os.path.exists(SUMMARY_DIR):
 if not os.path.exists(CHECKPOINT_DIR):
     os.makedirs(CHECKPOINT_DIR)
 
-# reset for coressponding RUN #
-for f in glob.glob(SUMMARY_DIR+"/*"):
-    shutil.rmtree(f)
-
 
 def train():
-	sess = tf.Session()
-	# model = vggnet.VGGNet(lr=learning_rate, SEED=SEED)
-	solver = Solver(sess, model)
+    sess = tf.Session()
+    solver = Solver(sess, model)
 
-	# writers
-	train_writer = tf.summary.FileWriter(SUMMARY_DIR + '/train', sess.graph)
-	valid_writer = tf.summary.FileWriter(SUMMARY_DIR + '/valid')
-	test_writer = tf.summary.FileWriter(SUMMARY_DIR + '/test')
+    # saver
+    saver = tf.train.Saver()
+    if FLAGS.save_dir != "tmp":
+        checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
+        if checkpoint and checkpoint.model_checkpoint_path:
+            print("model exist")
+            exit()
+            # try:
+            #     saver.restore(sess, checkpoint.model_checkpoint_path)
+            #     print("Successfully loaded:", checkpoint.model_checkpoint_path)
+            #     exit()
+            # except:
+            #     print("Error on loading old network weights")
+        else:
+            print("Could not find old network weights")
+    
+    # reset summaries for our GPU
+    for f in glob.glob(SUMMARY_DIR+"/*"):
+        shutil.rmtree(f)
 
-	# saver
-	saver = tf.train.Saver()
-	# checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
-	# if checkpoint and checkpoint.model_checkpoint_path:
-	#     try:
-	#         saver.restore(sess, checkpoint.model_checkpoint_path)
-	#         print("Successfully loaded:", checkpoint.model_checkpoint_path)
+    # writers
+    train_writer = tf.summary.FileWriter(SUMMARY_DIR + '/train', sess.graph)
+    valid_writer = tf.summary.FileWriter(SUMMARY_DIR + '/valid')
+    test_writer = tf.summary.FileWriter(SUMMARY_DIR + '/test')
 
-	#         # restore test
-	#         train_loss, train_acc = solver.evaluate(mnist.train.images, mnist.train.labels, 1000, writer=train_writer, step=epoch+1)
-	#         valid_loss, valid_acc = solver.evaluate(mnist.validation.images, mnist.validation.labels, 1000, writer=valid_writer, step=epoch+1)
-	#         test_loss, test_acc = solver.evaluate(mnist.test.images, mnist.test.labels, 1000, writer=test_writer, step=epoch+1)
-	#         line = "[{}/{}] train: {:.4f}, {:.3%} / valid: {:.4f}, {:.2%} / test: {:.4f}, {:.2%}". \
-	#         format(epoch+1, epoch_n, train_loss, train_acc, valid_loss, valid_acc, test_loss, test_acc)
-	#         print(line)
+    datagen = datagenerator.Generator(FLAGS.augmentation_type, mnist)
 
-	#         exit()
-	#     except:
-	#         print("Error on loading old network weights")
-	# else:
-	#     print("Could not find old network weights")
+    max_train_acc = 0
+    max_valid_acc = 0
 
+    # train
+    sess.run(tf.global_variables_initializer())
 
-	max_train_acc = 0
-	max_valid_acc = 0
-	max_test_acc = 0
+    start_time = time.time()
+    print("========== training start ==========")
 
-	start_time = time.time()
+    for epoch in range(epoch_n):
+        # for _ in range(N // batch_size):
+        for x, y in datagen.generate(batch_size=128):
+            # batches = mnist.train.next_batch(batch_size)
+            _, train_loss = solver.train(x, y)
 
-	# train
-	sess.run(tf.global_variables_initializer())
+        train_loss, train_acc = solver.evaluate(mnist.train.images, mnist.train.labels, 1000, writer=train_writer, step=epoch+1)
+        valid_loss, valid_acc = solver.evaluate(mnist.validation.images, mnist.validation.labels, 1000, writer=valid_writer, step=epoch+1)
+        test_loss, test_acc = solver.evaluate(mnist.test.images, mnist.test.labels, 1000, writer=test_writer, step=epoch+1)
+        line = "[{}/{}] train: {:.4f}, {:.3%} / valid: {:.4f}, {:.2%} / test: {:.4f}, {:.2%}". \
+        format(epoch+1, epoch_n, train_loss, train_acc, valid_loss, valid_acc, test_loss, test_acc)
+        print line,
+        elapsed_time = datetime.timedelta(seconds=int(time.time()-start_time))
+        print("[{}]".format(elapsed_time))
 
-	for epoch in range(epoch_n):
-	    for _ in range(N // batch_size):
-	        batches = mnist.train.next_batch(batch_size)
-	        _, train_loss = solver.train(batches[0], batches[1])
+        if train_acc > max_train_acc:
+            max_train_acc = train_acc
+            train_line = line
+            saver.save(sess, CHECKPOINT_DIR + "/model-train")
+        if valid_acc > max_valid_acc:
+            max_valid_acc = valid_acc
+            valid_line = line
+            saver.save(sess, CHECKPOINT_DIR + "/model-valid")
 
-	    train_loss, train_acc = solver.evaluate(mnist.train.images, mnist.train.labels, 1000, writer=train_writer, step=epoch+1)
-	    valid_loss, valid_acc = solver.evaluate(mnist.validation.images, mnist.validation.labels, 1000, writer=valid_writer, step=epoch+1)
-	    test_loss, test_acc = solver.evaluate(mnist.test.images, mnist.test.labels, 1000, writer=test_writer, step=epoch+1)
-	    line = "[{}/{}] train: {:.4f}, {:.3%} / valid: {:.4f}, {:.2%} / test: {:.4f}, {:.2%}". \
-	    format(epoch+1, epoch_n, train_loss, train_acc, valid_loss, valid_acc, test_loss, test_acc)
-	    print(line)
+    saver.save(sess, CHECKPOINT_DIR + "/model-final")
 
-	    if train_acc > max_train_acc:
-	        max_train_acc = train_acc
-	        train_line = line
-	        saver.save(sess, CHECKPOINT_DIR + "/model-train")
-	    if valid_acc > max_valid_acc:
-	        max_valid_acc = valid_acc
-	        valid_line = line
-	        saver.save(sess, CHECKPOINT_DIR + "/model-valid")
-	    if test_acc > max_test_acc:
-	        max_test_acc = test_acc
-	        test_line = line
-	        saver.save(sess, CHECKPOINT_DIR + "/model-test")
-
-	saver.save(sess, CHECKPOINT_DIR + "/model-final")
-
-	print("[train max] {}".format(train_line))
-	print("[valid max] {}".format(valid_line))
-	print("[ test max] {}".format(test_line))
-	elapsed_time = time.time() - start_time
-	formatted = datetime.timedelta(seconds=int(elapsed_time))
-	print("=== training time elapsed: {}s ===".format(formatted))
+    print("[train max] {}".format(train_line))
+    print("[valid max] {}".format(valid_line))
+    print("[  final  ] {}".format(line))
+    elapsed_time = time.time() - start_time
+    formatted = datetime.timedelta(seconds=int(elapsed_time))
+    print("=== training time elapsed: {}s ===".format(formatted))
 
 
 # validation
@@ -150,4 +148,4 @@ def train():
 # validation.wrong_answer_check(solver, mnist.test.images, mnist.test.labels, filename="wrong_answers.png")
 
 if __name__ == '__main__':
-	train()
+    train()
