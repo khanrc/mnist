@@ -7,10 +7,12 @@ def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--num_epochs', default=150, help="Number of training epochs (default: 150)", type=int)
     parser.add_argument('--batch_size', default=128, help="Batch Size (default: 128)", type=int)
+    parser.add_argument('--learning_rate', default=0.001, help="Learning rate for ADAM (default: 0.001)", type=float)
     parser.add_argument('--save_dir', default='tmp', help="checkpoint subdirectory name (default: tmp)")
-    parser.add_argument('--gpu_num', default=0, help="CUDA visible device (default: 0)", required=True)
-    parser.add_argument("--model_name", default="vggnet", help="vggnet / vggnet2 (default: vggnet)")
-    parser.add_argument("--augmentation_type", default="none", help="none / affine / align / distortion (default: none)", required=True)
+    parser.add_argument('--gpu_num', default=0, help="CUDA visible device (default: 0)")
+    parser.add_argument("--model_name", help="vggnet / vggnet2 / resnet", required=True)
+    parser.add_argument("--augmentation_type", default="none", help="none / affine / align / distortion (default: none)")
+    parser.add_argument("--resnet_layer_n", default=3, help="6n+2: {3, 5, 7, 9 ... 18} (default: 3)", type=int)
 
     return parser
 
@@ -29,12 +31,17 @@ os.environ["CUDA_VISIBLE_DEVICES"]=str(FLAGS.gpu_num)
 import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
-import vggnet
+import vggnet, resnet
 from solver import Solver
 import time, datetime
 import os, glob, shutil
 import datagenerator
 
+
+# tf.reset_default_graph()
+SEED = 777
+tf.set_random_seed(SEED)
+np.random.seed(SEED)
 
 def get_model(model_name):
     # right position..?
@@ -42,15 +49,12 @@ def get_model(model_name):
         model = vggnet.VGGNet(name="vggnet", lr=learning_rate, SEED=SEED)
     elif model_name == "vggnet2":
         model = vggnet.VGGNet(name="vggnet2", lr=learning_rate, SEED=SEED)
+    elif model_name == "resnet":
+        model = resnet.ResNet(name="resnet", lr=learning_rate, SEED=SEED, layer_n=FLAGS.resnet_layer_n)
     else:
         assert False, "wrong model name"
 
     return model
-
-# tf.reset_default_graph()
-SEED = 777
-tf.set_random_seed(SEED)
-np.random.seed(SEED)
 
 mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
 batch_size = FLAGS.batch_size
