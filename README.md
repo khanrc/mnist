@@ -4,7 +4,12 @@ The aim of this project is to learn mnist classifier with very high accuracy (ab
 
 ## TODO
 
-* fix reproducibility
+* [1] modify train loss/acc calc
+    * move to training step
+    * summaries record method change into global step
+* change data distortion, align augmentation epoch type
+* [no] fix reproducibility
+    * looks impossible
 * [1] implement other models
     * [1] resnet
     * [1] inception

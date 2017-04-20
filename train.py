@@ -73,7 +73,10 @@ if not os.path.exists(CHECKPOINT_DIR):
 
 
 def train():
-    sess = tf.Session()
+    config = tf.ConfigProto()
+    # config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 0.3
+    sess = tf.Session(config=config)
     solver = Solver(sess, model)
 
     # saver
@@ -114,13 +117,12 @@ def train():
 
     for epoch in range(epoch_n):
         # for _ in range(N // batch_size):
-        for x, y in datagen.generate(batch_size=128):
-            # batches = mnist.train.next_batch(batch_size)
+        for x, y in datagen.generate(batch_size=batch_size):
             _, train_loss = solver.train(x, y)
 
-        train_loss, train_acc = solver.evaluate(mnist.train.images, mnist.train.labels, 1000, writer=train_writer, step=epoch+1)
-        valid_loss, valid_acc = solver.evaluate(mnist.validation.images, mnist.validation.labels, 1000, writer=valid_writer, step=epoch+1)
-        test_loss, test_acc = solver.evaluate(mnist.test.images, mnist.test.labels, 1000, writer=test_writer, step=epoch+1)
+        train_loss, train_acc = solver.evaluate(mnist.train.images, mnist.train.labels, batch_size, writer=train_writer, step=epoch+1)
+        valid_loss, valid_acc = solver.evaluate(mnist.validation.images, mnist.validation.labels, batch_size, writer=valid_writer, step=epoch+1)
+        test_loss, test_acc = solver.evaluate(mnist.test.images, mnist.test.labels, batch_size, writer=test_writer, step=epoch+1)
         line = "[{}/{}] train: {:.4f}, {:.3%} / valid: {:.4f}, {:.2%} / test: {:.4f}, {:.2%}". \
         format(epoch+1, epoch_n, train_loss, train_acc, valid_loss, valid_acc, test_loss, test_acc)
         print line,

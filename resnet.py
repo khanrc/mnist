@@ -59,7 +59,7 @@ class ResNet:
 
             # option B - projection with 1x1 strided conv
             if downsampling:
-                x = tf.layers.conv2d(x, output_channel, [1,1], strides=strides, padding='SAME', 
+                x = tf.layers.conv2d(x, output_channel, [1,1], strides=stride, padding='SAME', 
                     kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
 
             return tf.nn.relu(h2 + x)
