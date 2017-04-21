@@ -19,7 +19,7 @@ def conv_bn_activ_dropout(name, x, n_filters, kernel_size, strides, dropout_rate
     return net
 
 class VGGNet:
-    def build_vggnet(self, x_img, dropout_rate, training, SEED):
+    def build_vggnet(self, x_img, dropout_rate, SEED):
         # hidden layers
         net = x_img
         n_filters = 64
@@ -52,7 +52,7 @@ class VGGNet:
 
         return logits
 
-    def build_vggnet2(self, x_img, dropout_rate, training, SEED):
+    def build_vggnet2(self, x_img, dropout_rate, SEED):
         # hidden layers
         net = x_img
         n_filters = 64
@@ -74,7 +74,7 @@ class VGGNet:
                 dropout_rate=0.0, training=self.training, seed=SEED)
             net2 = tf.layers.max_pooling2d(net, [2, 2], 2, padding='SAME', name='2x2maxpool{}'.format(i+1))
             net = tf.concat([net1, net2], axis=3, name="concat{}".format(i+1)) ## add to channel
-            net = tf.layers.dropout(net, rate=dropout_rate, training=training, seed=SEED)
+            net = tf.layers.dropout(net, rate=dropout_rate, training=self.training, seed=SEED)
 
             n_filters *= 2
         
@@ -94,9 +94,9 @@ class VGGNet:
             x = preproc(self.X)
             x_img = tf.reshape(x, [-1, 28, 28, 1])
             if name == "vggnet":
-                logits = self.build_vggnet(x_img, dropout_rate=0.3, training=self.training, SEED=SEED)
+                logits = self.build_vggnet(x_img, dropout_rate=0.3, SEED=SEED)
             elif name == "vggnet2":
-                logits = self.build_vggnet2(x_img, dropout_rate=0.3, training=self.training, SEED=SEED)
+                logits = self.build_vggnet2(x_img, dropout_rate=0.3, SEED=SEED)
             else:
                 print("wrong name!!")
                 exit()

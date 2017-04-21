@@ -8,11 +8,13 @@ def build_parser():
     parser.add_argument('--num_epochs', default=150, help="Number of training epochs (default: 150)", type=int)
     parser.add_argument('--batch_size', default=128, help="Batch Size (default: 128)", type=int)
     parser.add_argument('--learning_rate', default=0.001, help="Learning rate for ADAM (default: 0.001)", type=float)
-    parser.add_argument('--save_dir', default='tmp', help="checkpoint subdirectory name (default: tmp)")
+    parser.add_argument('--save_dir', default='tmp', help="checkpoint & summaries save dir name (default: tmp)")
     parser.add_argument('--gpu_num', default=0, help="CUDA visible device (default: 0)")
-    parser.add_argument("--model_name", help="vggnet / vggnet2 / resnet", required=True)
+    parser.add_argument("--model_name", help="vggnet / vggnet2 / resnet / wide_resnet / inception", required=True)
     parser.add_argument("--augmentation_type", default="none", help="none / affine / align / distortion (default: none)")
     parser.add_argument("--resnet_layer_n", default=3, help="6n+2: {3, 5, 7, 9 ... 18} (default: 3)", type=int)
+    parser.add_argument("--ignore_exist_model", default=False, help="Overwrite new model to exist model (default: false)", type=bool)
+    parser.add_argument("--gpu_memory_fraction", default=0.3, help="If this value is 0.0, allow_growth option is on (default: 0.3)", type=float)
 
     return parser
 
@@ -31,11 +33,12 @@ os.environ["CUDA_VISIBLE_DEVICES"]=str(FLAGS.gpu_num)
 import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
-import vggnet, resnet
+import vggnet, resnet, wide_resnet, inception_light
 from solver import Solver
 import time, datetime
 import os, glob, shutil
 import datagenerator
+from utils import *
 
 
 # tf.reset_default_graph()
@@ -43,28 +46,15 @@ SEED = 777
 tf.set_random_seed(SEED)
 np.random.seed(SEED)
 
-def get_model(model_name):
-    # right position..?
-    if model_name == "vggnet":
-        model = vggnet.VGGNet(name="vggnet", lr=learning_rate, SEED=SEED)
-    elif model_name == "vggnet2":
-        model = vggnet.VGGNet(name="vggnet2", lr=learning_rate, SEED=SEED)
-    elif model_name == "resnet":
-        model = resnet.ResNet(name="resnet", lr=learning_rate, SEED=SEED, layer_n=FLAGS.resnet_layer_n)
-    else:
-        assert False, "wrong model name"
-
-    return model
-
 mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
 batch_size = FLAGS.batch_size
 epoch_n = FLAGS.num_epochs
 learning_rate = 0.001
 N = mnist.train.num_examples
 
-model = get_model(model_name=FLAGS.model_name)
+model = get_model(name=FLAGS.model_name, learning_rate=FLAGS.learning_rate, SEED=SEED, resnet_layer_n=FLAGS.resnet_layer_n)
 
-SUMMARY_DIR = "./tmp/gpu{}".format(FLAGS.gpu_num)
+SUMMARY_DIR = "./tmp/{}".format(FLAGS.save_dir)
 CHECKPOINT_DIR = "./checkpoint/{}".format(FLAGS.save_dir)
 if not os.path.exists(SUMMARY_DIR):
     os.makedirs(SUMMARY_DIR)
@@ -74,8 +64,10 @@ if not os.path.exists(CHECKPOINT_DIR):
 
 def train():
     config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.3
+    if FLAGS.gpu_memory_fraction > 0.0:
+        config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_memory_fraction
+    else:
+        config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
     solver = Solver(sess, model)
 
@@ -85,15 +77,16 @@ def train():
         checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
         if checkpoint and checkpoint.model_checkpoint_path:
             print("model exist")
-            exit()
+            if FLAGS.ignore_exist_model == False:
+            	exit()
             # try:
             #     saver.restore(sess, checkpoint.model_checkpoint_path)
             #     print("Successfully loaded:", checkpoint.model_checkpoint_path)
             #     exit()
             # except:
             #     print("Error on loading old network weights")
-        else:
-            print("Could not find old network weights")
+        # else:
+        #     print("Could not find old network weights")
     
     # reset summaries for our GPU
     for f in glob.glob(SUMMARY_DIR+"/*"):

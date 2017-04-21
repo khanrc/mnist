@@ -1,70 +1,82 @@
+CHECKPOINT_DIR = "./checkpoint"
+model_paths = ["RES-AFFINE-20-500", "RES-AFFINE-32-500", "VGG-AUG-500"]
+GPU_num = 0
+batch_size = 1000
+
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_num)
 
 import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
-import vggnet
-from solver import Solver
 import os
+from utils import *
 
 SEED = 777
 tf.set_random_seed(SEED)
 np.random.seed(SEED)
 
 mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
-N = mnist.train.num_examples
-
-sess = tf.Session()
-CHECKPOINT_DIR = "./checkpoint"
-model_paths = ["VGG2-400", "VGG-300", "VGG-748"]
-
-def one_hot_vectorize(indices, depth=10):
-    idx = np.array(indices)
-    ret = np.zeros([idx.shape[0], depth])
-    ret[np.arange(idx.shape[0]), idx] = 1
-    return ret
-
-sess.run(tf.global_variables_initializer())
+N = mnist.test.num_examples
 
 y_sum = np.zeros_like(mnist.test.labels)
-
-# Walking every paths below CHECKPOINT_DIR
-# for path in os.walk(CHECKPOINT_DIR):
-#     checkpoint = tf.train.get_checkpoint_state(path[0])
-#     if checkpoint:
+prob_sum = np.zeros_like(mnist.test.labels)
 
 # selective ensemble by model_paths
 for subp in model_paths:
     path = os.path.join(CHECKPOINT_DIR, subp)
     checkpoint = tf.train.get_checkpoint_state(path)
     if checkpoint:
-        if subp.startswith("VGG-"):
-            model = vggnet.VGGNet(name="vggnet")
-        elif subp.startswith("VGG2-"):
-            model = vggnet.VGGNet(name="vggnet2")
-        else:
-            print("what model?")
-            break
-        #model = vggnet.VGGNet(SEED=SEED)
-        solver = Solver(sess, model)
-        saver = tf.train.Saver()
+        tf.reset_default_graph()
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            ensemble_weight = 1.0
 
-        for v in checkpoint.all_model_checkpoint_paths:
-            if v.endswith("test"):
-                continue
-
-            saver.restore(sess, v)
-            # test_loss, test_acc = solver.evaluate(mnist.test.images, mnist.test.labels)
+            if subp.startswith("VGG-"):
+                model = get_model(name="vggnet")
+                # ensemble_weight = 2.0
+            elif subp.startswith("VGG2-"):
+                model = get_model(name="vggnet2")
+            elif subp.startswith("RES-"):
+                layer_n = int(subp.split("-")[2])
+                layer_n = (layer_n-2)/6
+                model = get_model(name="resnet", resnet_layer_n=layer_n)
+            else:
+                print("what model?")
+                break
             
-            pred, acc = sess.run([model.pred, model.accuracy], 
-                {model.X: mnist.test.images, model.y: mnist.test.labels, model.training: False})
-            print("{}: {:.2%}".format(v, acc))
+            saver = tf.train.Saver()
             
-            # how to ensemble?
-            # majority voting
-            y_sum += one_hot_vectorize(pred)
+            for v in checkpoint.all_model_checkpoint_paths:
+                if not v.endswith("valid"):
+                    continue
 
-corrects_sum = np.sum(np.equal(np.argmax(y_sum, 1), np.argmax(mnist.test.labels, 1)))
-print("ensemble: {:.2%}".format(corrects_sum / float(y_sum.shape[0])))
+                saver.restore(sess, v) 
+                
+                total_acc = 0
+                pred = np.zeros([N], dtype=int)
+                prob = np.zeros([N, 10], dtype=float)
+
+                for i in range(0, N, batch_size):
+                    x_batch = mnist.test.images[i:i+batch_size]
+                    y_batch = mnist.test.labels[i:i+batch_size]
+                    step_acc, step_pred, step_prob = sess.run([model.accuracy, model.pred, model.prob], {model.X: x_batch, model.y: y_batch, model.training: False})
+                    pred[i:i+batch_size] = step_pred
+                    prob[i:i+batch_size] = step_prob * ensemble_weight
+                    total_acc += step_acc * x_batch.shape[0]
+
+                total_acc /= N
+                print("{}: {:.2%}".format(v, total_acc))
+                
+                # how to ensemble?
+                # majority voting
+                y_sum += one_hot(pred) * ensemble_weight
+                prob_sum += prob
+
+                
+voting_acc = np.average(np.equal(np.argmax(y_sum, 1), np.argmax(mnist.test.labels, 1)))
+prob_avg_acc = np.average(np.equal(np.argmax(prob_sum, 1), np.argmax(mnist.test.labels, 1)))
+print("majority voting ensemble: {:.2%}".format(voting_acc))
+print("probability averaging ensemble: {:.2%}".format(prob_avg_acc))
+
 

@@ -23,86 +23,89 @@ def preproc(x):
     mean = tf.reduce_mean(x, axis=1, keep_dims=True)
     return x - mean
 
-class ResNet:
-    def residual_block(self, x, output_channel, downsampling=False, name='res_block'):
-        input_channel = int(x.shape[-1]) # get # of input channels
-
+class WideResNet:
+    # pRN & wRN
+    # wRN is just (x4) increased filter pRN with decreased depth + dropout
+    # in this case, we have to consider first block (no need BN & ReLU)
+    def wide_residual_block(self, x, output_channel, dropout_rate=0.3, first_block=False, downsampling=False, name='wRN_block'):
         if downsampling:
             stride = 2
         else:
             stride = 1
 
+        net = x
+
         with tf.variable_scope(name):
             with tf.variable_scope('conv1_in_block'):
-                h1 = tf.layers.conv2d(x, output_channel, [3,3], strides=stride, padding='SAME', use_bias=False,
+                if first_block == False:
+                    net = tf.layers.batch_normalization(net, training=self.training)
+                    net = tf.nn.relu(net)
+                net = tf.layers.conv2d(net, output_channel, [3,3], strides=stride, padding='SAME', use_bias=False,
                                       kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
-                h1 = tf.layers.batch_normalization(h1, training=self.training)
-                h1 = tf.nn.relu(h1)
             
-            with tf.variable_scope('conv2_in_block'):
-                h2 = tf.layers.conv2d(h1, output_channel, [3,3], strides=1, padding='SAME', use_bias=False,
-                                      kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
-                h2 = tf.layers.batch_normalization(h2, training=self.training)
-            
-            # option A - zero padding for extra dimension => no need extra params
-            # if downsampling:
-            #     pooled_x = tf.layers.average_pooling2d(x, pool_size=2, strides=2, padding='valid')
-            #     padded_x = tf.pad(pooled_x, [[0,0], [0,0], [0,0], [input_channel // 2, input_channel // 2]])
-            # else:
-            #     padded_x = x
+            if dropout_rate > 0.0:
+                net = tf.layers.dropout(net, rate=dropout_rate, training=self.training, seed=self.seed, name='dropout_in_block')
 
-            # option B - projection with 1x1 strided conv
+            with tf.variable_scope('conv2_in_block'):
+                net = tf.layers.batch_normalization(net, training=self.training)
+                net = tf.nn.relu(net)
+                net = tf.layers.conv2d(net, output_channel, [3,3], strides=1, padding='SAME', use_bias=False,
+                                      kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
+
             if downsampling:
                 x = tf.layers.conv2d(x, output_channel, [1,1], strides=stride, padding='SAME', 
                     kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
+            # TODO: check wide resnet for first layer dimension matching
+            # elif first_block: # first_block is not downsampling
+            #     x = tf.layers.conv2d(x, output_channel, [1,1], strides=1, padding='SAME', 
+            #         kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
 
-            return tf.nn.relu(h2 + x)
+            return net + x
 
-    """
-    In original resnet, 6n+2 layers for CIFAR-10.
-    each feature map sizes: {32, 16, 8}
-    # of filters: {16, 32, 64}
-    """
-    def build_net(self, x_img, layer_n):
+    def build_wide_resnet(self, x_img, dropout_rate=0.3, layer_n=2):
         net = x_img
 
         # conv0: conv-bn-relu [-1, 28, 28, 16]
-        # conv1: [-1, 28, 28, 16] * n
-        # conv2: [-1, 14, 14, 32] * n
-        # conv3: [-1,  7,  7, 64] * n
+        # conv1: [-1, 28, 28, 64] * n
+        # conv2: [-1, 14, 14, 128] * n
+        # conv3: [-1,  7,  7, 256] * n
         # global average pooling
         # dense
+        # widening factor = 4
 
         with tf.variable_scope("conv0"):
-            net = tf.layers.conv2d(net, 16, [3,3], strides=1, padding='SAME', use_bias=False,
+            # 원래 이게 64가 아니고 16인데, x dim matching 을 어케 해주는지 몰라서 일단 그냥 64로 맞춰놈
+            net = tf.layers.conv2d(net, 64, [3,3], strides=1, padding='SAME', use_bias=False,
                       kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
             net = tf.layers.batch_normalization(net, training=self.training)
             net = tf.nn.relu(net)
 
         with tf.variable_scope("conv1"):
             for i in range(layer_n):
-                net = self.residual_block(net, 16, name="resblock{}".format(i+1))
-                assert net.shape[1:] == [28, 28, 16]
+                net = self.wide_residual_block(net, 64, dropout_rate=dropout_rate, first_block=(i==0), name="resblock{}".format(i+1))
+                assert net.shape[1:] == [28, 28, 64]
 
         with tf.variable_scope("conv2"):
             for i in range(layer_n):
-                net = self.residual_block(net, 32, downsampling=(i==0), name="resblock{}".format(i+1))
-                assert net.shape[1:] == [14, 14, 32]
+                net = self.wide_residual_block(net, 128, dropout_rate=dropout_rate, downsampling=(i==0), name="resblock{}".format(i+1))
+                assert net.shape[1:] == [14, 14, 128]
 
         with tf.variable_scope("conv3"):
             for i in range(layer_n):
-                net = self.residual_block(net, 64, downsampling=(i==0), name="resblock{}".format(i+1))
-                assert net.shape[1:] == [7, 7, 64]
+                net = self.wide_residual_block(net, 256, dropout_rate=dropout_rate, downsampling=(i==0), name="resblock{}".format(i+1))
+                assert net.shape[1:] == [7, 7, 256]
 
         with tf.variable_scope("fc"):
+            net = tf.layers.batch_normalization(net, training=self.training)
+            net = tf.nn.relu(net)
             net = tf.reduce_mean(net, [1,2]) # global average pooling
-            assert net.shape[1:] == [64]
+            assert net.shape[1:] == [256]
 
             logits = tf.layers.dense(net, 10, weights_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed), name="logits")
 
         return logits
 
-    def __init__(self, name='resnet', lr=0.001, layer_n=3, SEED=777):
+    def __init__(self, name='wide_resnet', lr=0.001, dropout_rate=0.3, layer_n=2, SEED=777):
         with tf.variable_scope(name):
             self.X = tf.placeholder(tf.float32, [None, 784], name='X')
             self.y = tf.placeholder(tf.float32, [None, 10], name='y')
@@ -112,7 +115,7 @@ class ResNet:
             x = preproc(self.X)
             x_img = tf.reshape(x, [-1, 28, 28, 1])
 
-            logits = self.build_net(x_img, layer_n=layer_n)
+            logits = self.build_wide_resnet(x_img, dropout_rate=dropout_rate, layer_n=layer_n)
 
             self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=self.y), name="loss")
 #             self.loss = tf.reduce_mean(tf.losses.hinge_loss(logits=logits, labels=self.y))
