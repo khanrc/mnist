@@ -35,13 +35,13 @@ class ResNet:
         with tf.variable_scope(name):
             with tf.variable_scope('conv1_in_block'):
                 h1 = tf.layers.conv2d(x, output_channel, [3,3], strides=stride, padding='SAME', use_bias=False,
-                                      kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
+                                      kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed))
                 h1 = tf.layers.batch_normalization(h1, training=self.training)
                 h1 = tf.nn.relu(h1)
             
             with tf.variable_scope('conv2_in_block'):
                 h2 = tf.layers.conv2d(h1, output_channel, [3,3], strides=1, padding='SAME', use_bias=False,
-                                      kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
+                                      kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed))
                 h2 = tf.layers.batch_normalization(h2, training=self.training)
             
             # option A - zero padding for extra dimension => no need extra params
@@ -54,7 +54,7 @@ class ResNet:
             # option B - projection with 1x1 strided conv
             if downsampling:
                 x = tf.layers.conv2d(x, output_channel, [1,1], strides=stride, padding='SAME', 
-                    kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
+                    kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed))
 
             return tf.nn.relu(h2 + x)
 
@@ -75,7 +75,7 @@ class ResNet:
 
         with tf.variable_scope("conv0"):
             net = tf.layers.conv2d(net, 16, [3,3], strides=1, padding='SAME', use_bias=False,
-                      kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed))
+                      kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed))
             net = tf.layers.batch_normalization(net, training=self.training)
             net = tf.nn.relu(net)
 
@@ -98,7 +98,7 @@ class ResNet:
             net = tf.reduce_mean(net, [1,2]) # global average pooling
             assert net.shape[1:] == [64]
 
-            logits = tf.layers.dense(net, 10, weights_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed), name="logits")
+            logits = tf.layers.dense(net, 10, weights_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed), name="logits")
 
         return logits
 

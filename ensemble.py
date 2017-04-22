@@ -1,6 +1,6 @@
 CHECKPOINT_DIR = "./checkpoint"
 model_paths = ["RES-AFFINE-20-500", "RES-AFFINE-32-500", "VGG-AUG-500"]
-GPU_num = 0
+GPU_num = 1
 batch_size = 1000
 
 import os
@@ -75,8 +75,8 @@ for subp in model_paths:
 
                 
 voting_acc = np.average(np.equal(np.argmax(y_sum, 1), np.argmax(mnist.test.labels, 1)))
-prob_avg_acc = np.average(np.equal(np.argmax(prob_sum, 1), np.argmax(mnist.test.labels, 1)))
+# prob_avg_acc = np.average(np.equal(np.argmax(prob_sum, 1), np.argmax(mnist.test.labels, 1)))
 print("majority voting ensemble: {:.2%}".format(voting_acc))
-print("probability averaging ensemble: {:.2%}".format(prob_avg_acc))
+# print("probability averaging ensemble: {:.2%}".format(prob_avg_acc))
 
 
