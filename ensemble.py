@@ -76,6 +76,6 @@ for subp in model_paths:
 voting_acc = np.average(np.equal(np.argmax(y_sum, 1), np.argmax(mnist.test.labels, 1)))
 prob_avg_acc = np.average(np.equal(np.argmax(prob_sum, 1), np.argmax(mnist.test.labels, 1)))
 print("majority voting ensemble: {:.2%}".format(voting_acc))
-print("probability averaging ensemble: {:.2%}".format(prob_avg_acc))
+#print("probability averaging ensemble: {:.2%}".format(prob_avg_acc))
 
 
