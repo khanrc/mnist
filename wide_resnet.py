@@ -101,7 +101,7 @@ class WideResNet:
             net = tf.reduce_mean(net, [1,2]) # global average pooling
             assert net.shape[1:] == [256]
 
-            logits = tf.layers.dense(net, 10, weights_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed), name="logits")
+            logits = tf.layers.dense(net, 10, kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed), name="logits")
 
         return logits
 

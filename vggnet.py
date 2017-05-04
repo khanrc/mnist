@@ -10,7 +10,7 @@ def preproc(x):
 def conv_bn_activ_dropout(name, x, n_filters, kernel_size, strides, dropout_rate, training, seed, padding='SAME', activ_fn=tf.nn.relu):
     with tf.variable_scope(name):
         net = tf.layers.conv2d(x, n_filters, kernel_size, strides=strides, padding=padding, use_bias=False,
-                              kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=seed))
+                              kernel_initializer=tf.contrib.layers.xavier_initializer(seed=seed))
         net = tf.layers.batch_normalization(net, training=training)
         net = activ_fn(net)
         if dropout_rate > 0.0: # 0.0 dropout rate means no dropout
@@ -48,7 +48,7 @@ class VGGNet:
         net = tf.contrib.layers.flatten(net)
 #             net = tf.layers.dense(net, 1024, activation=tf.nn.relu)
 #             net = tf.layers.dropout(net, rate=0.5, training=self.training)
-        logits = tf.layers.dense(net, 10, weights_initializer=tf.contrib.layers.variance_scaling_initializer(seed=SEED), name="logits")
+        logits = tf.layers.dense(net, 10, kernel_initializer=tf.contrib.layers.xavier_initializer(seed=SEED), name="logits")
 
         return logits
 
@@ -81,7 +81,7 @@ class VGGNet:
         net = tf.contrib.layers.flatten(net)
 #             net = tf.layers.dense(net, 1024, activation=tf.nn.relu)
 #             net = tf.layers.dropout(net, rate=0.5, training=self.training)
-        logits = tf.layers.dense(net, 10, weights_initializer=tf.contrib.layers.variance_scaling_initializer(seed=SEED), name="logits")
+        logits = tf.layers.dense(net, 10, kernel_initializer=tf.contrib.layers.xavier_initializer(seed=SEED), name="logits")
 
         return logits
 

@@ -2,7 +2,7 @@
 
 The aim of this project is to learn mnist classifier with very high accuracy (above 99.8% !)
 
-based on python 2.7, tensorflow 0.12.head.
+based on python 2.7, tensorflow 1.1.0.
 
 ## Models
 
@@ -19,19 +19,23 @@ based on python 2.7, tensorflow 0.12.head.
 
 ## Results
 
-* VGG + all conv: 99.73%
-* resnet-20: 99.63%
-* resnet-32: 99.60%
-* **majority voting (ensemble)**: 99.77%
+* VGG + all conv + batch size 64: 99.74%
+* VGG + all conv + batch size 128: 99.68% 
+* resnet-32: 99.68%
+* **majority voting (ensemble)**: 99.76%
 
 ### Other models
 
+* resnet-20: 99.68%
 * INCEPTION lightweight: 99.65%
 * wide resnet-14: 99.68%
 
 ## Usage
 
-### Reproduce 99.77%
+### Reproduce 99.76%
+
+Note: `ensemble.py` indicates gpu=0
+
 ```
 python ensemble.py
 ```
@@ -52,7 +56,7 @@ optional arguments:
   --num_epochs NUM_EPOCHS
                         Number of training epochs (default: 150)
   --batch_size BATCH_SIZE
-                        Batch Size (default: 128)
+                        Batch size (default: 128)
   --learning_rate LEARNING_RATE
                         Learning rate for ADAM (default: 0.001)
   --save_dir SAVE_DIR   checkpoint & summaries save dir name (default: tmp)
@@ -60,7 +64,7 @@ optional arguments:
   --model_name MODEL_NAME
                         vggnet / vggnet2 / resnet / wide_resnet / inception
   --augmentation_type AUGMENTATION_TYPE
-                        none / affine / align / distortion (default: none)
+                        none / affine / align (default: affine)
   --resnet_layer_n RESNET_LAYER_N
                         6n+2: {3, 5, 7, 9 ... 18} (default: 3)
   --ignore_exist_model IGNORE_EXIST_MODEL

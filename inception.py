@@ -207,7 +207,7 @@ class Inception:
             net = tf.reduce_mean(net, [1,2])
             assert net.shape[1:] == [1536]
             net = tf.layers.dropout(net, rate=0.2, training=self.training, seed=self.seed)
-            logits = tf.layers.dense(net, 10, weights_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed), name="logits")
+            logits = tf.layers.dense(net, 10, kernel_initializer=tf.contrib.layers.variance_scaling_initializer(seed=self.seed), name="logits")
 
         return logits
 

@@ -1,6 +1,7 @@
 CHECKPOINT_DIR = "./checkpoint"
-model_paths = ["RES-AFFINE-20-500", "RES-AFFINE-32-500", "VGG-AUG-500"]
-GPU_num = 1
+model_paths = ["RES32", "VGG1000", "VGG-xavier-64"]
+# model_paths = ["RES20", "RES32", "VGG1000-0.0001", "VGG1000-0.0005", "VGG1000"]
+GPU_num = 0
 batch_size = 1000
 
 import os
@@ -32,13 +33,11 @@ for subp in model_paths:
             sess.run(tf.global_variables_initializer())
             ensemble_weight = 1.0
 
-            if subp.startswith("VGG-"):
+            if subp.startswith("VGG"):
                 model = get_model(name="vggnet")
                 # ensemble_weight = 2.0
-            elif subp.startswith("VGG2-"):
-                model = get_model(name="vggnet2")
-            elif subp.startswith("RES-"):
-                layer_n = int(subp.split("-")[2])
+            elif subp.startswith("RES"):
+                layer_n = int(subp[3:])
                 layer_n = (layer_n-2)/6
                 model = get_model(name="resnet", resnet_layer_n=layer_n)
             else:
@@ -75,8 +74,8 @@ for subp in model_paths:
 
                 
 voting_acc = np.average(np.equal(np.argmax(y_sum, 1), np.argmax(mnist.test.labels, 1)))
-# prob_avg_acc = np.average(np.equal(np.argmax(prob_sum, 1), np.argmax(mnist.test.labels, 1)))
+prob_avg_acc = np.average(np.equal(np.argmax(prob_sum, 1), np.argmax(mnist.test.labels, 1)))
 print("majority voting ensemble: {:.2%}".format(voting_acc))
-# print("probability averaging ensemble: {:.2%}".format(prob_avg_acc))
+print("probability averaging ensemble: {:.2%}".format(prob_avg_acc))
 
 

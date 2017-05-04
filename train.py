@@ -6,12 +6,12 @@ from argparse import ArgumentParser
 def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--num_epochs', default=150, help="Number of training epochs (default: 150)", type=int)
-    parser.add_argument('--batch_size', default=128, help="Batch Size (default: 128)", type=int)
+    parser.add_argument('--batch_size', default=128, help="Batch size (default: 128)", type=int)
     parser.add_argument('--learning_rate', default=0.001, help="Learning rate for ADAM (default: 0.001)", type=float)
     parser.add_argument('--save_dir', default='tmp', help="checkpoint & summaries save dir name (default: tmp)")
     parser.add_argument('--gpu_num', default=0, help="CUDA visible device (default: 0)")
     parser.add_argument("--model_name", help="vggnet / vggnet2 / resnet / wide_resnet / inception", required=True)
-    parser.add_argument("--augmentation_type", default="none", help="none / affine / align / distortion (default: none)")
+    parser.add_argument("--augmentation_type", default="affine", help="none / affine / align (default: affine)")
     parser.add_argument("--resnet_layer_n", default=3, help="6n+2: {3, 5, 7, 9 ... 18} (default: 3)", type=int)
     parser.add_argument("--ignore_exist_model", default=False, help="Overwrite new model to exist model (default: false)", type=bool)
     parser.add_argument("--gpu_memory_fraction", default=0.3, help="If this value is 0.0, allow_growth option is on (default: 0.3)", type=float)
@@ -65,7 +65,8 @@ if not os.path.exists(CHECKPOINT_DIR):
 def train():
     config = tf.ConfigProto()
     if FLAGS.gpu_memory_fraction > 0.0:
-        config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_memory_fraction
+        if FLAGS.gpu_memory_fraction < 1.0:
+            config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_memory_fraction
     else:
         config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
